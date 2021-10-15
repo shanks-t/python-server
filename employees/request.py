@@ -1,85 +1,85 @@
 import sqlite3
 import json
-from models import Employee
+from models import Employee, Location
 
 
 EMPLOYEES = [
     {
-      "id": 1,
-      "name": "Jessica Younker",
-      "email": "jessica@younker.com"
+        "id": 1,
+        "name": "Jessica Younker",
+        "email": "jessica@younker.com"
     },
     {
-      "id": 2,
-      "name": "Jordan Nelson",
-      "email": "jordan@nelson.com"
+        "id": 2,
+        "name": "Jordan Nelson",
+        "email": "jordan@nelson.com"
     },
     {
-      "id": 3,
-      "name": "Zoe LeBlanc",
-      "email": "zoe@leblanc.com"
+        "id": 3,
+        "name": "Zoe LeBlanc",
+        "email": "zoe@leblanc.com"
     },
     {
-      "name": "Meg Ducharme",
-      "email": "meg@ducharme.com",
-      "id": 4
+        "name": "Meg Ducharme",
+        "email": "meg@ducharme.com",
+        "id": 4
     },
     {
-      "name": "Hannah Hall",
-      "email": "hannah@hall.com",
-      "id": 5
+        "name": "Hannah Hall",
+        "email": "hannah@hall.com",
+        "id": 5
     },
     {
-      "name": "Emily Lemmon",
-      "email": "emily@lemmon.com",
-      "id": 6
+        "name": "Emily Lemmon",
+        "email": "emily@lemmon.com",
+        "id": 6
     },
     {
-      "name": "Jordan Castelloe",
-      "email": "jordan@castelloe.com",
-      "id": 7
+        "name": "Jordan Castelloe",
+        "email": "jordan@castelloe.com",
+        "id": 7
     },
     {
-      "name": "Leah Gwin",
-      "email": "leah@gwin.com",
-      "id": 8
+        "name": "Leah Gwin",
+        "email": "leah@gwin.com",
+        "id": 8
     },
     {
-      "name": "Caitlin Stein",
-      "email": "caitlin@stein.com",
-      "id": 9
+        "name": "Caitlin Stein",
+        "email": "caitlin@stein.com",
+        "id": 9
     },
     {
-      "name": "Greg Korte",
-      "email": "greg@korte.com",
-      "id": 10
+        "name": "Greg Korte",
+        "email": "greg@korte.com",
+        "id": 10
     },
     {
-      "name": "Charisse Lambert",
-      "email": "charisse@lambert.com",
-      "id": 11
+        "name": "Charisse Lambert",
+        "email": "charisse@lambert.com",
+        "id": 11
     },
     {
-      "name": "Madi Peper",
-      "email": "madi@peper.com",
-      "id": 12
+        "name": "Madi Peper",
+        "email": "madi@peper.com",
+        "id": 12
     },
     {
-      "name": "Jenna Solis",
-      "email": "jenna@solis.com",
-      "id": 14
+        "name": "Jenna Solis",
+        "email": "jenna@solis.com",
+        "id": 14
     },
     {
-      "name": "Eric \"Macho Man\" Taylor",
-      "email": "macho@man.com",
-      "id": 22
+        "name": "Eric \"Macho Man\" Taylor",
+        "email": "macho@man.com",
+        "id": 22
     },
     {
-      "name": "trey shanks",
-      "email": "trey@shanks.com",
-      "id": 23
+        "name": "trey shanks",
+        "email": "trey@shanks.com",
+        "id": 23
     }
-  ]
+]
 
 
 def get_all_employees():
@@ -91,9 +91,18 @@ def get_all_employees():
         db_cursor = conn.cursor()
 
         # Write the SQL query to get the information you want
-        db_cursor.execute(
-        "SELECT * FROM employee")
-   
+        db_cursor.execute('''
+            SELECT
+              a.id,
+              a.name,
+              a.address,
+              a.location_id,
+                l.name location_name,
+                l.address location_address
+            FROM Employee a
+            JOIN Location l
+                ON l.id = a.location_id
+    ''')
 
         # Initialize an empty list to hold all employee representations
         employees = []
@@ -104,13 +113,14 @@ def get_all_employees():
         # Iterate list of data returned from database
         for row in dataset:
 
-            # Create an employee instance from the current row.
-            # Note that the database fields are specified in
-            # exact order of the parameters defined in the
-            # employee class above.
-            employee = Employee(row['id'], row['name'], row['address'],
-            row['location_id'])
+            employee = Employee(row['id'], row['name'], row['address'],row['location_id'])
 
+            location = Location(row['id'], row['location_name'], row['location_address'])
+
+        # Add the dictionary representation of the location to the animal
+            employee.location = location.__dict__
+
+        # Add the dictionary representation of the employee to the list
             employees.append(employee.__dict__)
 
     # Use `json` package to properly serialize list as JSON
@@ -133,7 +143,7 @@ def get_single_employee(id):
             a.location_id,
         FROM employee a
         WHERE a.id = ?
-        """, ( id, ))
+        """, (id, ))
 
         # Load the single result into memory
         data = db_cursor.fetchone()
@@ -143,6 +153,7 @@ def get_single_employee(id):
                             data['location_id'])
 
         return json.dumps(employee.__dict__)
+
 
 def create_employee(employee):
     # Get the id value of the last employee in the list
@@ -160,6 +171,7 @@ def create_employee(employee):
     # Return the dictionary with `id` property added
     return employee
 
+
 def delete_employee(id):
     # Initial -1 value for employee index, in case one isn't found
     employee_index = -1
@@ -175,6 +187,7 @@ def delete_employee(id):
     if employee_index >= 0:
         EMPLOYEES.pop(employee_index)
 
+
 def find_employees_by_location(location_id):
     with sqlite3.connect("./kennel.db") as conn:
         conn.row_factory = sqlite3.Row
@@ -185,11 +198,12 @@ def find_employees_by_location(location_id):
         SELECT *
         FROM employee a
         WHERE a.location_id = ?
-        """, ( location_id, ))
+        """, (location_id, ))
         employees = []
         dataset = db_cursor.fetchall()
 
         for row in dataset:
-            employee = Employee(row['id'], row['name'], row['breed'], row['status'], row['location_id'], row['customer_id'])
+            employee = Employee(row['id'], row['name'], row['breed'],
+                                row['status'], row['location_id'], row['customer_id'])
             employees.append(employee.__dict__)
     return json.dumps(employees)
