@@ -174,3 +174,22 @@ def delete_employee(id):
     # If the employee was found, use pop(int) to remove it from list
     if employee_index >= 0:
         EMPLOYEES.pop(employee_index)
+
+def find_employees_by_location(location_id):
+    with sqlite3.connect("./kennel.db") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+
+        # Write the SQL query to get the information you want
+        db_cursor.execute("""
+        SELECT *
+        FROM employee a
+        WHERE a.location_id = ?
+        """, ( location_id, ))
+        employees = []
+        dataset = db_cursor.fetchall()
+
+        for row in dataset:
+            employee = Employee(row['id'], row['name'], row['breed'], row['status'], row['location_id'], row['customer_id'])
+            employees.append(employee.__dict__)
+    return json.dumps(employees)
