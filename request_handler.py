@@ -1,7 +1,7 @@
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from animals import get_all_animals, get_single_animal, create_animal, delete_animal, update_animal, find_animals_by_location
+from animals import get_all_animals, get_single_animal, create_animal, delete_animal, update_animal, find_animals_by_location, get_animals_by_status
 from locations import get_all_locations, get_single_location, create_location, delete_location
 from employees import get_all_employees, get_single_employee, create_employee, delete_employee
 from customers import get_all_customers, get_single_customer, create_customer, delete_customer, get_customers_by_email
@@ -125,6 +125,8 @@ class HandleRequests(BaseHTTPRequestHandler):
                 response = find_animals_by_location(value)
             if key == "location_id" and resource == "employees":
                 response = find_animals_by_location(value)
+            if key == "status" and resource == "animals":
+                response = get_animals_by_status(value)
 
         self.wfile.write(response.encode())
 
@@ -202,7 +204,6 @@ class HandleRequests(BaseHTTPRequestHandler):
         # It handles any PUT request.
 
     def do_PUT(self):
-        self._set_headers(204)
         content_len = int(self.headers.get('content-length', 0))
         post_body = self.rfile.read(content_len)
         post_body = json.loads(post_body)
@@ -210,12 +211,19 @@ class HandleRequests(BaseHTTPRequestHandler):
         # Parse the URL
         (resource, id) = self.parse_url(self.path)
 
-        # Delete a single animal from the list
-        if resource == "animals":
-            update_animal(id, post_body)
+        success = False
 
-        # Encode the new animal and send in response
+        if resource == "animals":
+            success = update_animal(id, post_body)
+        # rest of the elif's
+
+        if success:
+            self._set_headers(204)
+        else:
+            self._set_headers(404)
+
         self.wfile.write("".encode())
+
 
 
 
