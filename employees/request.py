@@ -1,158 +1,148 @@
-import employees
+import sqlite3
+import json
+from models import Employee
 
 
 EMPLOYEES = [
     {
       "id": 1,
       "name": "Jessica Younker",
-      "email": "jessica@younker.com",
-      "employee": True
+      "email": "jessica@younker.com"
     },
     {
       "id": 2,
       "name": "Jordan Nelson",
-      "email": "jordan@nelson.com",
-      "employee": True
+      "email": "jordan@nelson.com"
     },
     {
       "id": 3,
       "name": "Zoe LeBlanc",
-      "email": "zoe@leblanc.com",
-      "employee": True
+      "email": "zoe@leblanc.com"
     },
     {
       "name": "Meg Ducharme",
       "email": "meg@ducharme.com",
-      "id": 4,
-      "employee": True
+      "id": 4
     },
     {
       "name": "Hannah Hall",
       "email": "hannah@hall.com",
-      "id": 5,
-      "employee": True
+      "id": 5
     },
     {
       "name": "Emily Lemmon",
       "email": "emily@lemmon.com",
-      "id": 6,
-      "employee": True
+      "id": 6
     },
     {
       "name": "Jordan Castelloe",
       "email": "jordan@castelloe.com",
-      "id": 7,
-      "employee": True
+      "id": 7
     },
     {
       "name": "Leah Gwin",
       "email": "leah@gwin.com",
-      "id": 8,
-      "employee": True
+      "id": 8
     },
     {
       "name": "Caitlin Stein",
       "email": "caitlin@stein.com",
-      "id": 9,
-      "employee": True
+      "id": 9
     },
     {
       "name": "Greg Korte",
       "email": "greg@korte.com",
-      "id": 10,
-      "employee": True
+      "id": 10
     },
     {
       "name": "Charisse Lambert",
       "email": "charisse@lambert.com",
-      "id": 11,
-      "employee": True
+      "id": 11
     },
     {
       "name": "Madi Peper",
       "email": "madi@peper.com",
-      "id": 12,
-      "employee": True
+      "id": 12
     },
     {
       "name": "Jenna Solis",
       "email": "jenna@solis.com",
-      "id": 14,
-      "employee": True
-    },
-    {
-      "id": 15,
-      "name": "Ryan Tanay",
-      "email": "ryan@tanay.com",
-      "employee": False
-    },
-    {
-      "id": 16,
-      "name": "Emma Beaton",
-      "email": "emma@beaton.com",
-      "employee": False
-    },
-    {
-      "id": 17,
-      "name": "Dani Adkins",
-      "email": "dani.adkins.com",
-      "employee": False
-    },
-    {
-      "id": 18,
-      "name": "Adam Oswalt",
-      "email": "adam@oswalt.com",
-      "employee": False
-    },
-    {
-      "id": 19,
-      "name": "Fletcher Bangs",
-      "email": "flangs@bangs.com",
-      "employee": False
-    },
-    {
-      "id": 20,
-      "name": "Angela Lee",
-      "email": "lee@lee.com",
-      "employee": False
-    },
-    {
-      "name": "mike mike",
-      "email": "m@m.com",
-      "employee": False,
-      "id": 21
+      "id": 14
     },
     {
       "name": "Eric \"Macho Man\" Taylor",
       "email": "macho@man.com",
-      "employee": True,
       "id": 22
     },
     {
       "name": "trey shanks",
       "email": "trey@shanks.com",
-      "employee": True,
       "id": 23
     }
   ]
 
 
 def get_all_employees():
-    return EMPLOYEES
+    # Open a connection to the database
+    with sqlite3.connect("./kennel.db") as conn:
+
+        # Just use these. It's a Black Box.
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+
+        # Write the SQL query to get the information you want
+        db_cursor.execute(
+        "SELECT * FROM employee")
+   
+
+        # Initialize an empty list to hold all employee representations
+        employees = []
+
+        # Convert rows of data into a Python list
+        dataset = db_cursor.fetchall()
+
+        # Iterate list of data returned from database
+        for row in dataset:
+
+            # Create an employee instance from the current row.
+            # Note that the database fields are specified in
+            # exact order of the parameters defined in the
+            # employee class above.
+            employee = Employee(row['id'], row['name'], row['address'],
+            row['location_id'])
+
+            employees.append(employee.__dict__)
+
+    # Use `json` package to properly serialize list as JSON
+    return json.dumps(employees)
 
 
+# Function with a single parameter
 def get_single_employee(id):
-    requested_employee = None
+    with sqlite3.connect("./kennel.db") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
 
-    # Iterate the employeeS list above. Very similar to the
-    # for..of loops you used in JavaScript.
-    for employee in EMPLOYEES:
-        # Dictionaries in Python use [] notation to find a key
-        # instead of the dot notation that JavaScript used.
-        if employee["id"] == id:
-            requested_employee = employee
+        # Use a ? parameter to inject a variable's value
+        # into the SQL statement.
+        db_cursor.execute("""
+        SELECT
+            a.id,
+            a.name,
+            a.address,
+            a.location_id,
+        FROM employee a
+        WHERE a.id = ?
+        """, ( id, ))
 
-    return requested_employee
+        # Load the single result into memory
+        data = db_cursor.fetchone()
+
+        # Create an employee instance from the current row
+        employee = Employee(data['id'], data['name'], data['address'],
+                            data['location_id'])
+
+        return json.dumps(employee.__dict__)
 
 def create_employee(employee):
     # Get the id value of the last employee in the list
