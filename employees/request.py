@@ -96,6 +96,7 @@ def get_all_employees():
               a.id,
               a.name,
               a.address,
+              a.animal_id,
               a.location_id,
                 l.name location_name,
                 l.address location_address
@@ -113,7 +114,7 @@ def get_all_employees():
         # Iterate list of data returned from database
         for row in dataset:
 
-            employee = Employee(row['id'], row['name'], row['address'],row['location_id'])
+            employee = Employee(row['id'], row['name'], row['address'], row['animal_id'], row['location_id'])
 
             location = Location(row['id'], row['location_name'], row['location_address'])
 
@@ -140,7 +141,8 @@ def get_single_employee(id):
             a.id,
             a.name,
             a.address,
-            a.location_id,
+            a.animal_id,
+            a.location_id
         FROM employee a
         WHERE a.id = ?
         """, (id, ))
@@ -149,27 +151,36 @@ def get_single_employee(id):
         data = db_cursor.fetchone()
 
         # Create an employee instance from the current row
-        employee = Employee(data['id'], data['name'], data['address'],
+        employee = Employee(data['id'], data['name'], data['address'], data['animal_id'],
                             data['location_id'])
 
         return json.dumps(employee.__dict__)
 
 
-def create_employee(employee):
-    # Get the id value of the last employee in the list
-    max_id = EMPLOYEES[-1]["id"]
+def create_employee(new_employee):
+    with sqlite3.connect("./kennel.db") as conn:
+        db_cursor = conn.cursor()
 
-    # Add 1 to whatever that number is
-    new_id = max_id + 1
+        db_cursor.execute("""
+        INSERT INTO Employee
+            ( name, address, animal_id, location_id )
+        VALUES
+            ( ?, ?, ?, ?);
+        """, (new_employee['name'], new_employee['address'],
+            new_employee['animalId'], new_employee['locationId'], ))
 
-    # Add an `id` property to the employee dictionary
-    employee["id"] = new_id
+        # The `lastrowid` property on the cursor will return
+        # the primary key of the last thing that got added to
+        # the database.
+        id = db_cursor.lastrowid
 
-    # Add the employee dictionary to the list
-    EMPLOYEES.append(employee)
+        # Add the `id` property to the employee dictionary that
+        # was sent by the client so that the client sees the
+        # primary key in the response.
+        new_employee['id'] = id
 
-    # Return the dictionary with `id` property added
-    return employee
+
+    return json.dumps(new_employee)
 
 
 def delete_employee(id):
