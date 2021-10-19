@@ -152,7 +152,6 @@ class HandleRequests(BaseHTTPRequestHandler):
         # function next.
         if resource == "animals":
             new_animal = create_animal(post_body)
-
         # Encode the new animal and send in response
             self.wfile.write(f"{new_animal}".encode())
        
